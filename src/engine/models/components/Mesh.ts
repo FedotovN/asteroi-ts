@@ -24,6 +24,7 @@ export default class Mesh extends GameObjectComponent {
             context.lineTo(x, y);
         });
         context.closePath();
+        context.lineWidth = 3;
         context.stroke();
         context.fill();
     }

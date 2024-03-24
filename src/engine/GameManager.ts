@@ -50,18 +50,8 @@ export default class GameManager {
     }
     start() {
         this._addPlayer();
+        this._spawnAsteroids();
         this._initControls();
-        (this._addObstacle({ x: 300, y: 300}).getComponent('rigibody') as Rigidbody).push(5, 5);
-        (this._addObstacle({ x: 400, y: 300}).getComponent('rigibody') as Rigidbody).push(2, -5);
-        (this._addObstacle({ x: 500, y: 300}).getComponent('rigibody') as Rigidbody).push(-5, 20);
-        (this._addObstacle({ x: 600, y: 300}).getComponent('rigibody') as Rigidbody).push(22, -1);
-        (this._addObstacle({ x: 700, y: 300}).getComponent('rigibody') as Rigidbody).push(-.5, 15);
-        (this._addObstacle({ x: 800, y: 300}).getComponent('rigibody') as Rigidbody).push(35, -.5);
-        (this._addObstacle({ x: 900, y: 300}).getComponent('rigibody') as Rigidbody).push(5, 5);
-        (this._addObstacle({ x: 1000, y: 300}).getComponent('rigibody') as Rigidbody).push(5, 5);
-        (this._addObstacle({ x: 1100, y: 300}).getComponent('rigibody') as Rigidbody).push(5, 5);
-        (this._addObstacle({ x: 1200, y: 300}).getComponent('rigibody') as Rigidbody).push(5, 5);
-        (this._addObstacle({ x: 100, y: 300}).getComponent('rigibody') as Rigidbody).turn(250);
 
         this._tickManager.start();
     }
@@ -70,15 +60,14 @@ export default class GameManager {
     }
     private _addPlayer() {
         const position = {
-            x: 300,
-            y: 300,
+            x: this._width / 2,
+            y: this._height / 2,
         };
         const shape = new Shape({
             points: [
-                { x: -10, y: -10 },
-                { x: 10, y: -10 },
-                { x: 10, y: 10 },
-                { x: -10, y: 10 },
+                { x: 0, y: -6 },
+                { x: 20, y: 0 },
+                { x: 0, y: 6 },
             ],
         });
         const collider = new Collider({ shape });
@@ -87,7 +76,7 @@ export default class GameManager {
 
         const player = new Player({
             maxHealth: 10,
-            rotation: 0,
+            rotation: -90,
             position
         });
 
@@ -95,33 +84,56 @@ export default class GameManager {
         player.setComponent(mesh);
         player.setComponent(rigidbody);
 
+        collider.onCollision(() => {
+            this._player.health -= 1;
+            console.log('hp left:', this._player.health);
+        });
+
         this._player = player;
 
         this._gameObjectsManager.instantiate(player);
     }
-    private _addObstacle(position: Vector) {
+    private _spawnAsteroids() {
+        setInterval(() => {
+            const roid = this._addAsteroid();
+            const rb = roid.getComponent('rigibody') as Rigidbody;
+            rb.push(Math.random() * 10, Math.random() * 10);
+            rb.turn(Math.random() * 20);
+        }, 2000);
+    }
+    private _addAsteroid() {
+        const position = { x: Math.random() * this._width, y: Math.random() * this._height };
         const shape = new Shape({
             points: [
-                { x: -40, y: -40 },
-                { x: 40, y: -40 },
-                { x: 40, y: 40 },
-                { x: -40, y: 40 },
+                { x: -50, y: -30 },
+                { x: -15, y: -25 },
+                { x: -10, y: -27 },
+                { x: -5, y: -15 },
+                { x: 0, y: 10 },
+                { x: 0, y: 15 },
+                { x: -5, y: 20 },
+                { x: -10, y: 25 },
+                { x: -45, y: 50 },
+                { x: -60, y: 25 },
+                { x: -55, y: 15 },
+                { x: -65, y: 5 },
+                { x: -70, y: -35 },
             ]
         });
-        const collider = new Collider({ shape });
+
+        const asteroid = new GameObject({ position, rotation: 0 });
+
         const mesh = new Mesh({ shape });
+        const collider = new Collider({ shape });
         const rb = new Rigidbody({});
-        const obstacle = new GameObject({
-            position,
-            rotation: 0
-        });
 
-        obstacle.setComponent(mesh);
-        obstacle.setComponent(collider);
-        obstacle.setComponent(rb);
+        asteroid.setComponent(mesh);
+        asteroid.setComponent(collider);
+        asteroid.setComponent(rb);
 
-        this._gameObjectsManager.instantiate(obstacle);
-        return obstacle;
+        this._gameObjectsManager.instantiate(asteroid);
+
+        return asteroid;
     }
     private _initControls() {
         const rb = this._player.getComponent('rigibody') as Rigidbody;
@@ -155,14 +167,18 @@ export default class GameManager {
     }
     private _onTick(deltaTime: number) {
         document.querySelector('#player-pos').innerHTML = `Player pos - x: ${this._player.position.x}; y: ${this._player.position.y}`;
+        document.querySelector('#objects-amount').innerHTML = `Objects amount: ${this._gameObjectsManager.gameObjects.length}`;
 
 
         const { gameObjects } = this._gameObjectsManager;
         // const c = (this._player.getComponent('collider') as Collider);
         gameObjects.forEach(x => {
             const cx = x.getComponent('collider') as Collider;
+            if (!cx) return;
             gameObjects.forEach(y => {
-                cx.collidesWith(y.getComponent('collider') as Collider);
+                const cy = y.getComponent('collider') as Collider;
+                if (!cy) return;
+                cx.collidesWith(cy);
             })
         })
 
