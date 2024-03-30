@@ -6,7 +6,7 @@ type InputListenerOptions = {
     onUp?: () => void,
     once?: boolean,
 };
-export default class InputService {
+class InputService {
 
     setListener(options: InputListenerOptions) {
         const { keyCode, onDown, onUp, once } = options;
@@ -34,3 +34,4 @@ export default class InputService {
         }
     };
 }
+export default new InputService();

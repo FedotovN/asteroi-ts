@@ -25,7 +25,8 @@ class TickService {
     }
     private _getUpdateCallbackContext() {
         return {
-            deltaTime: this.deltaTime
+            deltaTime: this.deltaTime,
+            time: this.lastTimestamp,
         }
     }
 }

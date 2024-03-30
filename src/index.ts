@@ -1,7 +1,6 @@
 import "../styles.css";
 import EngineManager from "./engine/EngineManager";
 import GameManager from "@/game/GameManager";
-
 const e = new EngineManager({
     canvasSelector: '#root',
     uiRootSelector: '#ui',
@@ -12,10 +11,11 @@ const {
     height,
     width,
     userInterfaceService,
-    inputService,
+    renderService
 } = e;
 
 const gm = new GameManager();
-gm.start({ height, width, inputService, uiService: userInterfaceService });
+renderService.addCamera();
+gm.start({ height, width, uiService: userInterfaceService, renderService });
 e.start();
 

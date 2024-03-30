@@ -14,14 +14,14 @@ export default class PlayerProjectile extends GameObject{
 
         const shape = new Shape({
             points: [
-                new Vector(-15, 0),
+                new Vector(-25, 0),
                 new Vector(0, 2),
-                new Vector(15, 0),
+                new Vector(25, 0),
                 new Vector(0, -2),
-                new Vector(-15,  0),
+                new Vector(-25,  0),
             ]
         });
-        const mesh = new Mesh({ shape: shape, fillStyle: '#F6AE2D', strokeStyle: '#F26419', lineWidth: 2 });
+        const mesh = new Mesh({ shape: shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0 });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape });
 
@@ -38,7 +38,6 @@ export default class PlayerProjectile extends GameObject{
         });
 
         rb.friction = 0;
-
         rb.velocity = new Vector(
             Math.cos(degreesToRad(this.rotation + rb.rotationVelocity)) * this._projectileSpeed,
             Math.sin(degreesToRad(this.rotation + rb.rotationVelocity)) * this._projectileSpeed

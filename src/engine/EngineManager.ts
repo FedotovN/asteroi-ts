@@ -1,5 +1,4 @@
 import RenderService from "./services/RenderService";
-import InputService from "./services/InputService";
 import GameObjectsService from "./services/GameObjectsService";
 import TickService from "./services/TickService";
 import PhysicsService from "./services/PhysicsService";
@@ -12,12 +11,11 @@ type GameOptions = {
     width: number,
 }
 export default class EngineManager {
-    private _renderService: RenderService;
+    renderService: RenderService;
     private _physicsService: PhysicsService;
     height: number;
     width: number;
 
-    readonly inputService: InputService;
     userInterfaceService: UserInterfaceService;
 
     private _updateCallbacks: Set<(deltaTime: number) => void> = new Set();
@@ -38,9 +36,8 @@ export default class EngineManager {
         canvas.width = this.width;
 
         this._physicsService = new PhysicsService();
-        this._renderService = new RenderService({ context });
+        this.renderService = new RenderService({ context, canvas });
 
-        this.inputService = new InputService();
         this.userInterfaceService = new UserInterfaceService(uiRootSelector);
 
         TickService.onUpdate(({ deltaTime }: { deltaTime: number }) => this._onTick(deltaTime));
@@ -59,6 +56,6 @@ export default class EngineManager {
         this._physicsService.collide();
         this._physicsService.move(deltaTime);
 
-        this._renderService.rerender();
+        this.renderService.render();
     }
 }

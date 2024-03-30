@@ -1,11 +1,4 @@
-import Shape from "../engine/models/Shape";
-import Collider from "../engine/models/components/Collider";
-import Mesh from "../engine/models/components/Mesh";
-import Rigidbody from "../engine/models/components/Rigidbody";
-import Player from "./models/entities/Player";
 import Vector from "../engine/models/Vector";
-import InputService from "@/engine/services/InputService";
-import degreesToRad from "@/engine/utils/degreesToRad";
 import TextUIElement from "@/engine/models/UI/TextUIElement";
 import UserInterfaceService from "@/engine/services/UserInterfaceService";
 

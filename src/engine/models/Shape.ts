@@ -3,16 +3,32 @@ import degreesToRad from "@/engine/utils/degreesToRad";
 
 type ShapeOptions = {
     points: Vector[],
+    scale?: number,
 }
 
 export default class Shape {
     points: Vector[];
-    constructor({ points }: ShapeOptions) {
+    private _scale: number = 1;
+    get scale() {
+        return this._scale;
+    }
+    set scale(value: number) {
+        if (value < 0) {
+            this._scale = 0
+            return;
+        }
+        this._scale = value;
+    }
+    constructor({ points, scale }: ShapeOptions) {
         this.points = points;
+        this._scale = scale || this._scale;
+    }
+    private _getScaledPoint(point: Vector) {
+        return new Vector(point.x * this._scale, point.y * this._scale);
     }
     getPointsPosition(origin: Vector, rotation: number): Vector[] {
         return this.points.map(p => {
-           const { x, y } = p;
+           const { x, y } = this._getScaledPoint(p);
            const { x: ox, y: oy } = origin;
            return this._rotatePoint(x + ox, y + oy, rotation, origin);
         });

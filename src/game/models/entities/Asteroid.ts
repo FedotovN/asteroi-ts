@@ -5,18 +5,20 @@ import Mesh from "@/engine/models/components/Mesh";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
 import GameObjectsService from "@/engine/services/GameObjectsService";
+import Player from "@/game/models/entities/Player";
 
 export default class Asteroid extends Agent {
     private _isBlinking: boolean;
     private _maxRadius = 100;
     private _minRadius = 50;
     private _asteroidDefaultColor = 'rgb(23, 86, 118)'
-
+    public player: Player;
     radius: number;
-    constructor(props: AgentProperties) {
+    constructor(props: AgentProperties & { player: Player }) {
         super(props);
 
         this.name = 'asteroid';
+        this.player = props.player;
 
         this.radius = ((this._maxRadius - this._minRadius) * Math.random()) + this._minRadius;
         const difference = this.radius / 2;
@@ -32,7 +34,7 @@ export default class Asteroid extends Agent {
             vertexArr.push(new Vector(randX, randY));
         }
         const shape = new Shape({ points: vertexArr });
-        const mesh = new Mesh({ shape, fillStyle: this._asteroidDefaultColor, strokeStyle: '#4BA3C3', lineWidth: 10 });
+        const mesh = new Mesh({ shape, fillStyle: this._asteroidDefaultColor, strokeStyle: '#4BA3C3' });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape })
 
@@ -45,12 +47,13 @@ export default class Asteroid extends Agent {
     }
     onUpdate() {
         if (this.health <= 0) {
+            this.player.score += 1;
             this.destroy();
         }
-        if (this.position.x < -150 ||
-            this.position.x > GameObjectsService.width + 150 ||
-            this.position.y < -150 ||
-            this.position.y > GameObjectsService.height + 150
+        if (this.position.x < -1200 + this.player.position.x ||
+            this.position.x > 1200 + this.player.position.x ||
+            this.position.y < -1200 + this.player.position.y ||
+            this.position.y > this.player.position.y + 1200
         ) {
             this.destroy();
         }
@@ -66,16 +69,15 @@ export default class Asteroid extends Agent {
             this._isBlinking = false;
         }, 100);
     }
-    _fillRgb(red: number, green: number, blue: number) {
+    _fillRgba(red: number, green: number, blue: number, alpha: number) {
         const m = this.getComponent('mesh') as Mesh;
-        m.fillStyle = `rgb(${red},${green},${blue})`
+        m.fillStyle = `rgba(${red},${green},${blue}, ${alpha})`
     }
     makeDamage(damage: number) {
         this.health -= damage;
         const m = this.getComponent('mesh') as Mesh;
-        const healthPercentage = (this.health / this.maxHealth) * 100;
-        m.lineWidth = (healthPercentage / 100) * m.lineWidth;
-        this._fillRgb((100 - healthPercentage) * 1.75, 86, 118);
+        const healthPercentage = this.health / this.maxHealth;
+        this._fillRgba(23, 86, 118, healthPercentage);
         this._meshBlink();
     }
 }
