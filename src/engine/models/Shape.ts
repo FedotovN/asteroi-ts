@@ -24,7 +24,7 @@ export default class Shape {
         const { x: ox, y: oy } = origin;
         const newX = (ox + (x - ox) * rotCos - (y - oy) * rotSin);
         const newY = oy + (x - ox) * rotSin + (y - oy) * rotCos;
-        return { x: newX, y: newY };
+        return new Vector(newX, newY);
     }
 
 }

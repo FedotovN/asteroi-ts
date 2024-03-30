@@ -1,7 +1,21 @@
 import "../styles.css";
-import GameManager from "./engine/GameManager";
-new GameManager({
-    rootSelector: '#root',
+import EngineManager from "./engine/EngineManager";
+import GameManager from "@/game/GameManager";
+
+const e = new EngineManager({
+    canvasSelector: '#root',
+    uiRootSelector: '#ui',
     width: window.innerWidth,
     height: window.innerHeight,
-}).start();
+});
+const {
+    height,
+    width,
+    userInterfaceService,
+    inputService,
+} = e;
+
+const gm = new GameManager();
+gm.start({ height, width, inputService, uiService: userInterfaceService });
+e.start();
+

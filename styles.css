@@ -8,7 +8,7 @@ body {
     align-items: center;
     font-family: sans-serif;
 }
-.ui-layer {
+#ui {
     position: absolute;
     padding: 15px;
     box-sizing: border-box;

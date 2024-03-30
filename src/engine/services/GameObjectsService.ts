@@ -1,8 +1,18 @@
 import GameObject from "../models/GameObject";
-export default class GameObjectsService {
-    public gameObjects: GameObject[] = [];
+class GameObjectsService {
+    gameObjects: Set<GameObject> = new Set();
+    height: number;
+    width: number;
+
     instantiate(go: GameObject) {
-        this.gameObjects.push(go);
+        this.gameObjects.add(go);
+    }
+    destroy(go: GameObject) {
+        this.gameObjects.delete(go);
+    }
+    update(deltaTime: number) {
+        this.gameObjects.forEach(go => go.onUpdate?.(deltaTime));
     }
 }
+export default new GameObjectsService();
 
