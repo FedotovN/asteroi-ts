@@ -158,11 +158,16 @@ export default class GameManager {
 
         GameObjectsService.instantiate(this._player);
         const shipPart = new ExampleGameobject();
-        shipPart.translate.localPosition = new Vector(-0,0);
-        shipPart.translate.localRotation = 0;
+        shipPart.translate.position = new Vector(4,5);
+        shipPart.translate.rotation = -15;
+        const shipPartSecond = new ExampleGameobject();
+        shipPartSecond.translate.position = new Vector(4,-5);
+        shipPartSecond.translate.rotation = 15;
 
         this._player.addChild(shipPart);
+        this._player.addChild(shipPartSecond);
         shipPart.instantiate();
+        shipPartSecond.instantiate();
         const rb = this._player.getComponent('rigibody') as Rigidbody;
         this.velocityZoomUnsub = TickService.onUpdate(() => {
             this._renderService.camera.setZoom(lerp(this._renderService.camera.zoom, 1.6 - rb.velocity.getLength() / 10, .02));
