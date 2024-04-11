@@ -30,10 +30,10 @@ export default class Shape {
         return this.points.map(p => {
            const { x, y } = this._getScaledPoint(p);
            const { x: ox, y: oy } = origin;
-           return this._rotatePoint(x + ox, y + oy, rotation, origin);
+           return Shape.rotatePoint(x + ox, y + oy, rotation, origin);
         });
     }
-    private _rotatePoint(x: number, y: number, rotation: number, origin: Vector): Vector {
+    static rotatePoint(x: number, y: number, rotation: number, origin: Vector): Vector {
         const rad = degreesToRad(rotation);
         const rotCos = Math.cos(rad);
         const rotSin = Math.sin(rad);

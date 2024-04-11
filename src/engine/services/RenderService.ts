@@ -25,8 +25,6 @@ export default class RenderService {
             context: this._context,
             canvas: this._canvas,
             name: 'camera',
-            position: Vector.zero(),
-            rotation: 0,
         })
     }
     render() {

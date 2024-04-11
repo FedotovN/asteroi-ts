@@ -6,6 +6,7 @@ class GameObjectsService {
 
     instantiate(go: GameObject) {
         this.gameObjects.add(go);
+        go.onInstantiate();
     }
     destroy(go: GameObject) {
         this.gameObjects.delete(go);

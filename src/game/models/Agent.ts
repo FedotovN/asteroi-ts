@@ -6,8 +6,8 @@ export type AgentProperties = {
 export default class Agent extends GameObject {
     health: number;
     maxHealth: number;
-    constructor({ position, rotation, maxHealth, health }: AgentProperties) {
-        super({ position, rotation });
+    constructor({ maxHealth, health }: AgentProperties) {
+        super();
         this.maxHealth = maxHealth;
         this.health = health || maxHealth;
     }

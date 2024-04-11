@@ -17,8 +17,8 @@ export default class Collider extends GameObjectComponent {
     }
     checkCollision(collider: Collider) {
         if (!this._gameObject || collider == this) return false;
-        const currPolygon = this._turnShapeIntoSATPolygon(this.shape, this._gameObject.position, this._gameObject.rotation);
-        const targetPolygon = this._turnShapeIntoSATPolygon(collider.shape, collider._gameObject.position, collider._gameObject.rotation);
+        const currPolygon = this._turnShapeIntoSATPolygon(this.shape, this._gameObject.translate.position, this._gameObject.translate.rotation);
+        const targetPolygon = this._turnShapeIntoSATPolygon(collider.shape, collider._gameObject.translate.position, collider._gameObject.translate.rotation);
         let response: SAT.Response = new SAT.Response();
         if(SAT.testPolygonPolygon(currPolygon, targetPolygon, response)) {
             // const normOverlap = response.overlapN.normalize();

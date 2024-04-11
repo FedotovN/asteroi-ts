@@ -4,12 +4,13 @@ import Shape from "@/engine/models/Shape";
 import Mesh from "@/engine/models/components/Mesh";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
-import GameObjectsService from "@/engine/services/GameObjectsService";
+import AudioService from "@/engine/services/AudioService";
 import Player from "@/game/models/entities/Player";
+import { negativeRandom } from "@/engine/utils/random";
 
 export default class Asteroid extends Agent {
     private _isBlinking: boolean;
-    private _maxRadius = 100;
+    private _maxRadius = 70;
     private _minRadius = 50;
     private _asteroidDefaultColor = 'rgb(23, 86, 118)'
     public player: Player;
@@ -22,7 +23,7 @@ export default class Asteroid extends Agent {
 
         this.radius = ((this._maxRadius - this._minRadius) * Math.random()) + this._minRadius;
         const difference = this.radius / 2;
-        const vertexAmount = Math.floor(Math.random() * 2) + 5;
+        const vertexAmount = Math.floor(Math.random() * 5) + 5;
         const vertexArr = [];
 
         for (let i = 0; i < vertexAmount; i++) {
@@ -40,7 +41,6 @@ export default class Asteroid extends Agent {
 
         rb.rotationFriction = 0;
         rb.friction = 0;
-
         this.setComponent(mesh);
         this.setComponent(rb);
         this.setComponent(collider);
@@ -48,13 +48,11 @@ export default class Asteroid extends Agent {
     onUpdate() {
         if (this.health <= 0) {
             this.player.score += 1;
+            AudioService.addPosition('asteroid-explode', this.translate.position);
+            AudioService.play('asteroid-explode');
             this.destroy();
         }
-        if (this.position.x < -1200 + this.player.position.x ||
-            this.position.x > 1200 + this.player.position.x ||
-            this.position.y < -1200 + this.player.position.y ||
-            this.position.y > this.player.position.y + 1200
-        ) {
+        if (Math.abs(this.player.translate.position.getLength() - this.translate.position.getLength()) > 1200) {
             this.destroy();
         }
     }
@@ -75,7 +73,9 @@ export default class Asteroid extends Agent {
     }
     makeDamage(damage: number) {
         this.health -= damage;
-        const m = this.getComponent('mesh') as Mesh;
+        AudioService.addPosition('asteroid-hurt', this.translate.position);
+        // AudioService.addGain('asteroid-hurt', negativeRandom(-2, 2));
+        AudioService.stopAndPlay('asteroid-hurt');
         const healthPercentage = this.health / this.maxHealth;
         this._fillRgba(23, 86, 118, healthPercentage);
         this._meshBlink();

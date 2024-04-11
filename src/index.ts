@@ -13,9 +13,9 @@ const {
     userInterfaceService,
     renderService
 } = e;
-
 const gm = new GameManager();
 renderService.addCamera();
+
 gm.start({ height, width, uiService: userInterfaceService, renderService });
 e.start();
 

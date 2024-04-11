@@ -9,7 +9,11 @@ import degreesToRad from "../engine/utils/degreesToRad";
 import TextUIElement from "../engine/models/UI/TextUIElement";
 import UserInterfaceService from "../engine/services/UserInterfaceService";
 import RenderService from "@/engine/services/RenderService";
-import { lerp } from "@/engine/utils/easing";
+import { clamp, lerp } from "@/engine/utils/easing";
+import { negativeRandom, minRandom } from "@/engine/utils/random";
+import AudioService from "@/engine/services/AudioService";
+import ExampleGameobject from "@/game/models/other/ExampleGameobject";
+// import AudioService from "@/engine/services/AudioService";
 
 type GameManagerOptions = {
     width: number,
@@ -22,7 +26,10 @@ export default class GameManager {
     private _uiService: UserInterfaceService;
     private _currAsteroidInterval: NodeJS.Timeout;
     private _player: Player;
-    score: number;
+
+    private _mapWidth = 6000;
+    private _mapHeight = 6000;
+    velocityZoomUnsub: Function;
     start(options: GameManagerOptions) {
         const { height, width, uiService, renderService } = options;
         this._renderService = renderService;
@@ -33,28 +40,37 @@ export default class GameManager {
                 this.stop();
                 this.restart(height, width);
             }
+            this._player.translate.position.x = clamp(this._player.translate.position.x, 0, this._mapWidth);
+            this._player.translate.position.y = clamp(this._player.translate.position.y, 0, this._mapHeight);
         })
     }
     restart(height: number, width: number) {
-        this._spawnPlayer(new Vector(width / 2, height / 2))
+        this._spawnPlayer(new Vector(this._mapWidth / 2, this._mapHeight / 2))
         this._startAsteroidInterval(width, height);
         this._initControls();
         this._initUI(width, height);
 
-        this._renderService.camera.position = this._player.position;
+        this._renderService.camera.translate.position = new Vector(this._player.translate.position.x, this._player.translate.position.y);
         this._renderService.camera.target = this._player;
+        this._renderService.camera.borders = {
+            top: 0,
+            left: 0,
+            right: this._mapWidth,
+            bottom: this._mapHeight,
+        };
 
+        AudioService.listenerPosition = this._renderService.camera.translate.position;
 
         let zoom = 5;
         let unsub: Function;
 
         unsub = TickService.onUpdate(({ deltaTime }: { deltaTime: number }) => {
-            if (zoom > 1.5) {
+            if (zoom > 1.6) {
                 zoom -= deltaTime * .1;
                 this._renderService.camera.setZoom(zoom);
             }
-            if (zoom <= 1.5) {
-                zoom = 1.5;
+            if (zoom <= 1.6) {
+                zoom = 1.6;
                 this._renderService.camera.setZoom(zoom);
                 unsub();
             }
@@ -62,6 +78,7 @@ export default class GameManager {
     }
     stop() {
         this._player.destroy();
+        this.velocityZoomUnsub();
         this._removeAllAsteroids();
         this._stopAsteroidInterval()
     }
@@ -70,21 +87,21 @@ export default class GameManager {
         InputService.setListener({
             keyCode: 'KeyW',
             onDown: () => {
-                const x = Math.cos(degreesToRad(this._player.rotation + rb.rotationVelocity)) / 7;
-                const y = Math.sin(degreesToRad(this._player.rotation + rb.rotationVelocity)) / 7;
+                const x = Math.cos(degreesToRad(this._player.translate.rotation + rb.rotationVelocity)) / 6;
+                const y = Math.sin(degreesToRad(this._player.translate.rotation + rb.rotationVelocity)) / 6;
                 rb.push(x, y);
             }
         });
         InputService.setListener({
             keyCode: 'KeyD',
             onDown: () => {
-                rb.turn(0.12);
+                rb.turn(0.2);
             }
         });
         InputService.setListener({
             keyCode: 'KeyA',
             onDown: () => {
-                rb.turn(-0.12);
+                rb.turn(-0.2);
             }
         });
         InputService.setListener({
@@ -125,7 +142,7 @@ export default class GameManager {
         this._uiService.addUIBlock(scoreCount);
 
         TickService.onUpdate(() => {
-            positionBlock.setContent(`Player position: x - ${this._player.position.x.toFixed(1)}; y - ${this._player.position.y.toFixed(1)}`);
+            positionBlock.setContent(`Player position: x - ${this._player.translate.position.x.toFixed(1)}; y - ${this._player.translate.position.y.toFixed(1)}`);
             healthBlock.setContent(`Health left - ${this._player.health} / ${this._player.maxHealth}`);
             objectsCount.setContent(`There's ${GameObjectsService.gameObjects.size} game object(s) on the map`);
             scoreCount.setContent(`Score: ${this._player.score}`);
@@ -135,14 +152,20 @@ export default class GameManager {
     }
     private _spawnPlayer(position: Vector) {
         this._player = new Player({
-            position,
-            rotation: -90,
-            maxHealth: 6
+            maxHealth: 6,
         });
+        this._player.translate.position = position;
+
         GameObjectsService.instantiate(this._player);
+        const shipPart = new ExampleGameobject();
+        shipPart.translate.localPosition = new Vector(-0,0);
+        shipPart.translate.localRotation = 0;
+
+        this._player.addChild(shipPart);
+        shipPart.instantiate();
         const rb = this._player.getComponent('rigibody') as Rigidbody;
-        TickService.onUpdate(() => {
-            this._renderService.camera.setZoom(lerp(this._renderService.camera.zoom, 1.5 - rb.velocity.getLength() / 10, .02));
+        this.velocityZoomUnsub = TickService.onUpdate(() => {
+            this._renderService.camera.setZoom(lerp(this._renderService.camera.zoom, 1.6 - rb.velocity.getLength() / 10, .02));
         })
     }
     private _removeAllAsteroids() {
@@ -154,28 +177,44 @@ export default class GameManager {
         clearInterval(this._currAsteroidInterval);
     }
     private _startAsteroidInterval(width: number, height: number) {
+        //@ts-ignore
+        import('../game/assets/AsteroidExplode.wav').then(res => {
+            AudioService.add({ name: 'asteroid-explode', resolvedSrc: res.default });
+        });
+        //@ts-ignore
+        import('../game/assets/AsteroidHurt.wav').then(res => {
+            AudioService.add({ name: 'asteroid-hurt', resolvedSrc: res.default });
+        });
+
+
+        const spawnZoneWidth = 600;
+        const minSpawnZoneDist = 200
+
+        const horRand = () => negativeRandom(width / -2, width / 2);
+        const verRand = () => negativeRandom(height / -2, height / 2);
+        const spawnZoneRand = () => minRandom(minSpawnZoneDist, spawnZoneWidth);
         const getAsteroidPosition = {
-            top: (): Vector => new Vector((Math.random() * width) + this._player.position.x, (Math.random() * -80 + 100) - 100 + this._player.position.y),
-            left: (): Vector => new Vector((Math.random() * -80 + 60) - 60 + this._player.position.x, (Math.random() * height) + this._player.position.y),
-            right: (): Vector => new Vector((Math.random() * 80 - 60) + 60 + width + this._player.position.x, (Math.random() * height + this._player.position.y)),
-            bottom: (): Vector => new Vector(Math.random() * width + this._player.position.x, (Math.random() * 80 - 100) + 100 + height + this._player.position.y),
+            top: (x: number, y: number): Vector => new Vector(x + horRand(), (y - height / 2) - spawnZoneRand()),
+            left: (x: number, y: number): Vector => new Vector((x - width / 2) - spawnZoneRand(), y + verRand()),
+            right: (x: number, y: number): Vector => new Vector((x + width / 2) + spawnZoneRand() * Math.random(), y + verRand()),
+            bottom: (x: number, y: number): Vector => new Vector(x + horRand(), (y + height / 2) + spawnZoneRand()),
         };
         this._currAsteroidInterval = setInterval(() => {
+            const { x, y } = this._player.translate.position;
             const keys = Object.keys(getAsteroidPosition);
             const side = keys[Math.floor(Math.random() * keys.length)] as keyof typeof getAsteroidPosition;
             const positionFunction = getAsteroidPosition[side];
-            const position = positionFunction();
-            const aroundPlayer = new Vector(position.x, position.y);
+            const position = positionFunction(x, y);
             const asteroid = new Asteroid({
-                position: aroundPlayer,
-                maxHealth: 20,
+                maxHealth: 6,
                 name: 'asteroid',
                 player: this._player,
             });
+            asteroid.translate.position = position;
 
             const rb = asteroid.getComponent('rigibody') as Rigidbody
             asteroid.instantiate();
-            rb.push((this._player.position.x - asteroid.position.x) * .003, (this._player.position.y - asteroid.position.y) * .003);
+            rb.push((this._player.translate.position.x - asteroid.translate.position.x) * .003, (this._player.translate.position.y - asteroid.translate.position.y) * .003);
             rb.turn(5 * Math.random());
         }, 800);
     }

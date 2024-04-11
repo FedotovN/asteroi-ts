@@ -9,9 +9,9 @@ import Asteroid from "@/game/models/entities/Asteroid";
 
 export default class PlayerProjectile extends GameObject{
     private _projectileSpeed = 20;
-    constructor(props: GameObjectOptions) {
+    constructor(props?: GameObjectOptions) {
         super(props);
-
+        this.name = 'PlayerProjectile';
         const shape = new Shape({
             points: [
                 new Vector(-25, 0),
@@ -21,7 +21,7 @@ export default class PlayerProjectile extends GameObject{
                 new Vector(-25,  0),
             ]
         });
-        const mesh = new Mesh({ shape: shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0 });
+        const mesh = new Mesh({ shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0 });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape });
 
@@ -29,7 +29,7 @@ export default class PlayerProjectile extends GameObject{
         this.setComponent(rb);
         this.setComponent(collider);
 
-        collider.onCollision((c) => {
+        collider.onCollision(async (c) => {
             const go = c.getGameObject();
             if (go.name === 'asteroid') {
                 (go as Asteroid).makeDamage(1);
@@ -37,11 +37,13 @@ export default class PlayerProjectile extends GameObject{
             }
         });
 
+    }
+    onInstantiate() {
+        const rb = this.getComponent('rigibody') as Rigidbody;
         rb.friction = 0;
         rb.velocity = new Vector(
-            Math.cos(degreesToRad(this.rotation + rb.rotationVelocity)) * this._projectileSpeed,
-            Math.sin(degreesToRad(this.rotation + rb.rotationVelocity)) * this._projectileSpeed
+            Math.cos(degreesToRad(this.translate.rotation + rb.rotationVelocity)) * this._projectileSpeed,
+            Math.sin(degreesToRad(this.translate.rotation + rb.rotationVelocity)) * this._projectileSpeed
         );
-
     }
 }

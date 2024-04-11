@@ -24,6 +24,14 @@ const config = {
     module: {
         rules: [
             {
+                test: /\.(png|jpe?g|gif|wav)$/i,
+                use: [
+                    {
+                        loader: 'file-loader',
+                    },
+                ],
+            },
+            {
                 test: /\.css$/i,
                 use: [MiniCssExtractPlugin.loader, 'css-loader'],
             },

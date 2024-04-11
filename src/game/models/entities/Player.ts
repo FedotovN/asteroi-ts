@@ -8,11 +8,14 @@ import Vector from "@/engine/models/Vector";
 import Collider from "@/engine/models/components/Collider";
 import PlayerProjectile from "@/game/models/other/PlayerProjectile";
 import TickService from "@/engine/services/TickService";
+import AudioService from "@/engine/services/AudioService";
 import { sleep } from "@/engine/utils/sleep";
+import { negativeRandom } from "@/engine/utils/random";
+import GameObjectsService from "@/engine/services/GameObjectsService";
 
 export default class Player extends Agent {
-    private _fireRate: number = 30;
-    private _accuracy: number = 10;
+    private _fireRate: number = 6;
+    private _accuracy: number = 2;
     private _lastTimeShot: number = 0;
     private _isInvincible: boolean = false;
     private _invincibleTime: number = 3;
@@ -27,10 +30,11 @@ export default class Player extends Agent {
                 new Vector(0, 4),
                 new Vector(3, 0),
             ],
+            scale: .9,
         });
         const collider = new Collider({ shape });
         const mesh = new Mesh({ shape,});
-        const rigidbody = new Rigidbody({});
+        const rigidbody = new Rigidbody({ });
 
         this.setComponent(collider);
         this.setComponent(mesh);
@@ -41,12 +45,20 @@ export default class Player extends Agent {
            if (go.name === 'asteroid') {
                const rb = go.getComponent('rigibody') as Rigidbody
                rigidbody.push((
-                   this.position.x - (this.position.x + point.x)) * rb.velocity.getLength(),
-                   (this.position.y - (this.position.y + point.y)) * rb.velocity.getLength()
+                   this.translate.position.x - (this.translate.position.x + point.x)) * rb.velocity.getLength(),
+                   (this.translate.position.y - (this.translate.position.y + point.y)) * rb.velocity.getLength()
                );
                this.makeDamage(1);
            }
         });
+        // @ts-ignore
+        import('@/game/assets/PlayerShoot.wav').then(res => {
+            AudioService.add({ name: 'player-shoot', resolvedSrc: res.default });
+        })
+        // @ts-ignore
+        import('@/game/assets/PlayerHurt.wav').then(res => {
+            AudioService.add({ name: 'player-hurt', resolvedSrc: res.default });
+        })
         this._addMovementParticles();
         this._addInvincibleBlink()
     }
@@ -64,7 +76,7 @@ export default class Player extends Agent {
     private _addMovementParticles() {
         const rb = this.getComponent('rigibody') as Rigidbody
         setInterval(() => {
-            if (rb.velocity.getLength() <= 4.7) return;
+            if (rb.velocity.getLength() <= 5.5) return;
             const shape = new Shape({
                 points: [
                     new Vector(0, -4),
@@ -74,26 +86,25 @@ export default class Player extends Agent {
                 ],
             });
             const position = new Vector(
-                this.position.x + Math.cos(degreesToRad(this.rotation)),
-                this.position.y + Math.sin(degreesToRad(this.rotation))
+                this.translate.position.x + Math.cos(degreesToRad(this.translate.rotation)),
+                this.translate.position.y + Math.sin(degreesToRad(this.translate.rotation))
             );
-            const fireParticle = new GameObject({
-                position,
-                rotation: this.rotation,
-            });
-            let opacity = 1;
+            const fireParticle = new GameObject();
+            fireParticle.translate.position = position;
+            fireParticle.translate.rotation = this.translate.rotation;
+            let opacity = .5;
             const pMesh = new Mesh({ shape, strokeStyle: `rgba(255, 255, 255, ${opacity})`, fillStyle: 'transparent' });
             fireParticle.setComponent(pMesh);
             fireParticle.instantiate()
             let unsub = TickService.onUpdate(({ deltaTime }: { deltaTime: number }) => {
-                opacity -= deltaTime * .02;
+                opacity -= deltaTime * .01;
                 shape.scale -= deltaTime * .005;
                 pMesh.strokeStyle = `rgba(120, 120, 120, ${opacity})`
             })
             setTimeout(() => {
                 fireParticle.destroy();
                 unsub();
-            }, 1000)
+            }, 2000)
         }, 150);
     }
     makeDamage(damage: number) {
@@ -101,7 +112,8 @@ export default class Player extends Agent {
         this._isInvincible = true;
 
         this.health -= damage;
-
+        AudioService.addPosition('player-hurt', this.translate.position);
+        AudioService.play('player-hurt');
         setTimeout(() => {
             this._isInvincible = false;
         }, this._invincibleTime * 1000);
@@ -110,14 +122,17 @@ export default class Player extends Agent {
     shoot(): GameObject | null {
         if ((Date.now() - this._lastTimeShot) >= 1000 / this._fireRate) {
             const position = new Vector(
-                this.position.x + Math.cos(degreesToRad(this.rotation)) * 25,
-                this.position.y + Math.sin(degreesToRad(this.rotation)) * 25
+                this.translate.position.x + Math.cos(degreesToRad(this.translate.rotation)) * 25,
+                this.translate.position.y + Math.sin(degreesToRad(this.translate.rotation)) * 25
             );
-            const projectile = new PlayerProjectile({
-                position,
-                rotation: this.rotation + (Math.random()) * this._accuracy - (Math.random()) * this._accuracy
-            })
+            console.log(position);
+            const projectile = new PlayerProjectile()
+            projectile.translate.position = position;
+            projectile.translate.rotation = this.translate.rotation + (Math.random()) * this._accuracy - (Math.random()) * this._accuracy
             projectile.instantiate();
+            AudioService.addPosition('player-shoot', this.translate.position);
+            AudioService.addGain('player-shoot', negativeRandom(-.5, 3));
+            AudioService.stopAndPlay('player-shoot');
             setTimeout(() => projectile.destroy(), 2000);
             this._lastTimeShot = Date.now();
         }

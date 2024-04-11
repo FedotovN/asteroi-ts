@@ -24,14 +24,14 @@ export default class Rigidbody extends GameObjectComponent {
         this.rotationVelocity += power;
     }
     private _moveGameObject(deltaTime: number) {
-        this._gameObject.position.x += this.velocity.x * deltaTime;
-        this._gameObject.position.y += this.velocity.y * deltaTime;
+        const { x, y } = this._gameObject.translate.position;
+        this._gameObject.translate.setPosition(new Vector(x + this.velocity.x * deltaTime, y + this.velocity.y * deltaTime));
 
         this.velocity.x *= (1 - this.friction * deltaTime);
         this.velocity.y *= (1 - this.friction  * deltaTime);
     }
     private _rotateGameObject(deltaTime: number) {
-        this._gameObject.rotation += this.rotationVelocity * deltaTime;
+        this._gameObject.translate.rotation += this.rotationVelocity * deltaTime;
         this.rotationVelocity *= (1 - this.rotationFriction * deltaTime);
     }
 }

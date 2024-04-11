@@ -7,6 +7,7 @@ export default class Vector {
         return v1.x * v2.x + v1.y * v2.y;
     }
     normalize() {
+        if (this.getLength() === 0) return Vector.zero();
         return new Vector(this.x / this.getLength(), this.y / this.getLength());
     }
     getLength() {

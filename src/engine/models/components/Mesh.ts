@@ -28,8 +28,9 @@ export default class Mesh extends GameObjectComponent {
         if (!this.shape) return;
         const { strokeStyle, fillStyle, lineWidth } = context;
         context.beginPath()
-        const { position, rotation } = this._gameObject;
-        this.shape.getPointsPosition(position, rotation).forEach(p => {
+        const { position, rotation, parentRotation } = this._gameObject.translate;
+
+        this.shape.getPointsPosition(position, rotation + parentRotation).forEach(p => {
             const { x, y } = p;
             context.lineTo(x, y);
         });
