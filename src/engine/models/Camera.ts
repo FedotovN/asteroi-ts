@@ -1,9 +1,8 @@
 import GameObject, { GameObjectOptions } from "./GameObject";
 import Vector from "./Vector";
-import GameObjectsService from "@/engine/services/GameObjectsService";
-import Mesh from "@/engine/models/components/Mesh";
 import { clamp, lerp } from "@/engine/utils/easing";
-import { makeLogger } from "ts-loader/dist/logger";
+import DrawableEntity from "@/engine/models/shared/DrawableEntity";
+
 type ScreenBorders = {
     left: number,
     right: number,
@@ -13,6 +12,8 @@ type ScreenBorders = {
 type CameraOptions = {
     context: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
+    height: number,
+    width: number,
     backgroundColor?: string,
     meshColor?: string,
     borders?: ScreenBorders;
@@ -25,7 +26,7 @@ type CameraOptions = {
 
     target: GameObject;
     zoom: number = 1;
-    backgroundColor: string = 'rgba(30, 30, 30, .55)';
+    backgroundColor: string = 'rgba(30, 30, 30, .85)';
     meshColor: string = 'white';
     lerp: number = 1;
     deadZoneX: number = 60;
@@ -39,7 +40,7 @@ type CameraOptions = {
 
 
     private _lastZoom: number = this.zoom;
-     constructor({ context, canvas, backgroundColor, meshColor, borders, name, id }: CameraOptions) {
+     constructor({ context, canvas, backgroundColor, meshColor, borders, name, id, height, width }: CameraOptions) {
         super({ name, id});
 
         if (backgroundColor) this.backgroundColor = backgroundColor;
@@ -49,7 +50,8 @@ type CameraOptions = {
         this._context = context;
         this._canvas = canvas;
 
-        const { height, width } = this._canvas;
+        this._canvas.height = height;
+        this._canvas.width = width;
 
         this._height = height;
         this._width = width;
@@ -58,14 +60,12 @@ type CameraOptions = {
     worldToCameraPosition(point: Vector) {
         return new Vector(this.translate.position.x - point.x, this.translate.position.y - point.y);
     }
-    render() {
-        this.follow();
-        GameObjectsService.gameObjects.forEach(go => {
-            const mesh = go.getComponent('mesh') as Mesh;
-            if (!mesh) return;
-            mesh.draw({
-                context: this._context
-            });
+    render(objects: DrawableEntity[]) {
+        this._clearCanvas();
+        if (this.target) this.follow();
+        // else this._translateCanvas(this.translate.position.negative());
+        objects.forEach(obj => {
+            obj.draw({ context: this._context });
         });
         this._context.restore();
     }
@@ -78,10 +78,14 @@ type CameraOptions = {
     _getScreenCenter(): Vector {
          return new Vector((this._width / 2) / this.zoom, (this._height / 2) / this.zoom)
     }
-    follow() {
+    private _translateCanvas(to: Vector) {
         this._context.save();
+        this._context.translate(to.x, to.y);
+    }
+    follow() {
+        this._context.save()
         const { x, y } = this.target.translate.position;
-
+        console.log(x, y);
         if (this.translate.position.x - x > this.deadZoneX) {
             this.translate.position.x = lerp(this.translate.position.x, x + this.deadZoneX, this.lerp);
         } else if (this.translate.position.x - x < -this.deadZoneX) {
@@ -97,10 +101,9 @@ type CameraOptions = {
         this.translate.position.x = clamp(this.translate.position.x, this.borders.left + center.x - 20, this.borders.right - center.x + 20);
         this.translate.position.y = clamp(this.translate.position.y, this.borders.top + center.y - 20 * this.zoom, this.borders.bottom - center.y + 20);
 
-        const ctxTranslateX = this.translate.position.x - center.x;
-        const ctxTranslateY = this.translate.position.y - center.y;
-
-        this._context.translate(-ctxTranslateX, -ctxTranslateY);
+        const ctxX = this.translate.position.x - center.x;
+        const ctxY = this.translate.position.y - center.y;
+        this._translateCanvas(new Vector(-ctxX, -ctxY));
     }
     isInCamera(point: Vector) {
         const pos = this.worldToCameraPosition(point);
@@ -108,7 +111,7 @@ type CameraOptions = {
     }
      private _clearCanvas() {
          this._context.fillStyle = this.backgroundColor;
-         this._context.fillRect(0, 0, innerWidth, innerHeight);
+         this._context.fillRect(0, 0, this._width, this._height);
          this._context.fillStyle = this.meshColor;
          this._context.strokeStyle = 'black';
      }

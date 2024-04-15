@@ -6,10 +6,12 @@ export type GameObjectComponentOptions = {
 export default class GameObjectComponent {
     name: GameObjectComponentName;
     protected _gameObject: GameObject
-    constructor({ gameObject }: GameObjectComponentOptions) {
-        if (gameObject) this._gameObject = gameObject;
+    constructor(props?: GameObjectComponentOptions) {
+        if (!props) return;
+        if (props.gameObject) this._gameObject = props.gameObject;
     }
     setGameObject(go: GameObject) {
         this._gameObject = go;
     }
+    cleanup() {}
 }

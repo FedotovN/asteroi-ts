@@ -12,28 +12,39 @@ import RenderService from "@/engine/services/RenderService";
 import { clamp, lerp } from "@/engine/utils/easing";
 import { negativeRandom, minRandom } from "@/engine/utils/random";
 import AudioService from "@/engine/services/AudioService";
-import ExampleGameobject from "@/game/models/other/ExampleGameobject";
-// import AudioService from "@/engine/services/AudioService";
+import Camera from "@/engine/models/Camera";
 
 type GameManagerOptions = {
     width: number,
     height: number,
+    canvasSelector: string,
+    uiRootSelector: string,
     uiService: UserInterfaceService,
-    renderService: RenderService
 }
 export default class GameManager {
-    private _renderService: RenderService;
     private _uiService: UserInterfaceService;
     private _currAsteroidInterval: NodeJS.Timeout;
     private _player: Player;
+    private _camera: Camera;
 
+    private _width: number;
+    private _height: number;
     private _mapWidth = 6000;
     private _mapHeight = 6000;
+
+    private _canvas: HTMLCanvasElement;
+    private _context: CanvasRenderingContext2D;
     velocityZoomUnsub: Function;
     start(options: GameManagerOptions) {
-        const { height, width, uiService, renderService } = options;
-        this._renderService = renderService;
+        const { height, width, uiService, uiRootSelector, canvasSelector } = options;
         this._uiService = uiService;
+
+        this._width = width;
+        this._height = height;
+
+        this._canvas = document.querySelector(canvasSelector) as HTMLCanvasElement;
+        this._context = this._canvas.getContext('2d');
+
         this.restart(height, width);
         TickService.onUpdate(() => {
             if (this._player.health <= 0) {
@@ -45,21 +56,28 @@ export default class GameManager {
         })
     }
     restart(height: number, width: number) {
-        this._spawnPlayer(new Vector(this._mapWidth / 2, this._mapHeight / 2))
+        this._spawnPlayer(new Vector(this._mapWidth / 2, this._mapHeight / 2));
         this._startAsteroidInterval(width, height);
         this._initControls();
         this._initUI(width, height);
-
-        this._renderService.camera.translate.position = new Vector(this._player.translate.position.x, this._player.translate.position.y);
-        this._renderService.camera.target = this._player;
-        this._renderService.camera.borders = {
-            top: 0,
-            left: 0,
-            right: this._mapWidth,
-            bottom: this._mapHeight,
-        };
-
-        AudioService.listenerPosition = this._renderService.camera.translate.position;
+        this._camera = new Camera({
+            context: this._context,
+            canvas: this._canvas,
+            width: this._width,
+            height: this._height,
+            borders: {
+                top: 0,
+                left: 0,
+                right: this._mapWidth,
+                bottom: this._mapHeight,
+            },
+        });
+        RenderService.cameras.clear();
+        this._camera.target = this._player;
+        this._camera.translate.position = this._player.translate.position.copy()
+        this._context.restore();
+        RenderService.cameras.add(this._camera)
+        AudioService.listenerPosition = this._camera.translate.position;
 
         let zoom = 5;
         let unsub: Function;
@@ -67,11 +85,11 @@ export default class GameManager {
         unsub = TickService.onUpdate(({ deltaTime }: { deltaTime: number }) => {
             if (zoom > 1.6) {
                 zoom -= deltaTime * .1;
-                this._renderService.camera.setZoom(zoom);
+                this._camera.setZoom(zoom);
             }
             if (zoom <= 1.6) {
                 zoom = 1.6;
-                this._renderService.camera.setZoom(zoom);
+                this._camera.setZoom(zoom);
                 unsub();
             }
         });
@@ -155,22 +173,12 @@ export default class GameManager {
             maxHealth: 6,
         });
         this._player.translate.position = position;
-
+        this._player.translate.rotation = -90;
         GameObjectsService.instantiate(this._player);
-        const shipPart = new ExampleGameobject();
-        shipPart.translate.position = new Vector(4,5);
-        shipPart.translate.rotation = -15;
-        const shipPartSecond = new ExampleGameobject();
-        shipPartSecond.translate.position = new Vector(4,-5);
-        shipPartSecond.translate.rotation = 15;
 
-        this._player.addChild(shipPart);
-        this._player.addChild(shipPartSecond);
-        shipPart.instantiate();
-        shipPartSecond.instantiate();
         const rb = this._player.getComponent('rigibody') as Rigidbody;
         this.velocityZoomUnsub = TickService.onUpdate(() => {
-            this._renderService.camera.setZoom(lerp(this._renderService.camera.zoom, 1.6 - rb.velocity.getLength() / 10, .02));
+            this._camera.setZoom(lerp(this._camera.zoom, 1.6 - rb.velocity.getLength() / 10, .02));
         })
     }
     private _removeAllAsteroids() {

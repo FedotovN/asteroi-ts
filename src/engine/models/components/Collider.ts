@@ -1,14 +1,14 @@
 import SAT from "sat";
 import Vector from "../Vector";
-import Shape from "@/engine/models/Shape";
+import PolygonShape from "@/engine/models/Shape/PolygonShape";
 import GameObjectComponent, { GameObjectComponentOptions } from "../GameObjectComponent";
 
 type ColliderOptions = {
-    shape: Shape,
+    shape: PolygonShape,
 }
 
 export default class Collider extends GameObjectComponent {
-    shape: Shape;
+    shape: PolygonShape;
     private _collisionCallbacks: ((collider: Collider, collisionPoint: Vector) => void)[] = [];
     constructor(props: GameObjectComponentOptions & ColliderOptions) {
         super(props);
@@ -33,7 +33,7 @@ export default class Collider extends GameObjectComponent {
     getGameObject() {
         return this._gameObject;
     }
-    _turnShapeIntoSATPolygon(shape: Shape, position: Vector, rotation: number): SAT.Polygon {
+    _turnShapeIntoSATPolygon(shape: PolygonShape, position: Vector, rotation: number): SAT.Polygon {
         const shapePoints = shape.getPointsPosition(Vector.zero(), rotation);
         const polygonPoints = shapePoints.map(p => {
             const { x, y } = p;

@@ -1,12 +1,12 @@
-import Vector from "./Vector";
-import degreesToRad from "@/engine/utils/degreesToRad";
+import Vector from "../Vector";
+import degreesToRad from "../../utils/degreesToRad";
 
-type ShapeOptions = {
+export type ShapeOptions = {
     points: Vector[],
     scale?: number,
 }
 
-export default class Shape {
+export default class PolygonShape {
     points: Vector[];
     private _scale: number = 1;
     get scale() {
@@ -30,7 +30,7 @@ export default class Shape {
         return this.points.map(p => {
            const { x, y } = this._getScaledPoint(p);
            const { x: ox, y: oy } = origin;
-           return Shape.rotatePoint(x + ox, y + oy, rotation, origin);
+           return PolygonShape.rotatePoint(x + ox, y + oy, rotation, origin);
         });
     }
     static rotatePoint(x: number, y: number, rotation: number, origin: Vector): Vector {

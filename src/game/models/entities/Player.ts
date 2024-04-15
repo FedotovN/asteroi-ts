@@ -1,17 +1,15 @@
 import Agent, { AgentProperties } from "../Agent";
 import GameObject, { GameObjectOptions } from "@/engine/models/GameObject";
-import Shape from "@/engine/models/Shape";
-import Mesh from "@/engine/models/components/Mesh";
+import PolygonShape from "@/engine/models/Shape/PolygonShape";
+import PolygonMesh from "@/engine/models/Mesh/PolygonMesh";
 import degreesToRad from "@/engine/utils/degreesToRad";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Vector from "@/engine/models/Vector";
 import Collider from "@/engine/models/components/Collider";
 import PlayerProjectile from "@/game/models/other/PlayerProjectile";
-import TickService from "@/engine/services/TickService";
 import AudioService from "@/engine/services/AudioService";
 import { sleep } from "@/engine/utils/sleep";
-import { negativeRandom } from "@/engine/utils/random";
-import GameObjectsService from "@/engine/services/GameObjectsService";
+import MeshRenderer from "@/engine/models/components/MeshRenderer";
 
 export default class Player extends Agent {
     private _fireRate: number = 6;
@@ -23,7 +21,7 @@ export default class Player extends Agent {
     constructor(props: AgentProperties & GameObjectOptions) {
         super(props);
         this.id = 'player';
-        const shape = new Shape({
+        const shape = new PolygonShape({
             points: [
                 new Vector(0, -4),
                 new Vector(15, 0),
@@ -33,15 +31,16 @@ export default class Player extends Agent {
             scale: .9,
         });
         const collider = new Collider({ shape });
-        const mesh = new Mesh({ shape,});
+        const mr = new MeshRenderer();
+        mr.mesh = new PolygonMesh({ shape });
         const rigidbody = new Rigidbody({ });
 
         this.setComponent(collider);
-        this.setComponent(mesh);
+        this.setComponent(mr);
         this.setComponent(rigidbody);
 
         collider.onCollision((c, point) => {
-           const go = c.getGameObject();
+            const go = c.getGameObject();
            if (go.name === 'asteroid') {
                const rb = go.getComponent('rigibody') as Rigidbody
                rigidbody.push((
@@ -59,11 +58,11 @@ export default class Player extends Agent {
         import('@/game/assets/PlayerHurt.wav').then(res => {
             AudioService.add({ name: 'player-hurt', resolvedSrc: res.default });
         })
-        this._addMovementParticles();
         this._addInvincibleBlink()
     }
     private _addInvincibleBlink() {
-        const mesh = this.getComponent('mesh') as Mesh;
+        const mr = this.getComponent('meshRenderer') as MeshRenderer;
+        const mesh = mr.mesh;
         const initialFillStyle = mesh.fillStyle;
         setInterval(() => {
             if (!this._isInvincible) return;
@@ -72,40 +71,6 @@ export default class Player extends Agent {
                 mesh.fillStyle = initialFillStyle;
             });
         }, 200);
-    }
-    private _addMovementParticles() {
-        const rb = this.getComponent('rigibody') as Rigidbody
-        setInterval(() => {
-            if (rb.velocity.getLength() <= 5.5) return;
-            const shape = new Shape({
-                points: [
-                    new Vector(0, -4),
-                    new Vector(15, 0),
-                    new Vector(0, 4),
-                    new Vector(3, 0),
-                ],
-            });
-            const position = new Vector(
-                this.translate.position.x + Math.cos(degreesToRad(this.translate.rotation)),
-                this.translate.position.y + Math.sin(degreesToRad(this.translate.rotation))
-            );
-            const fireParticle = new GameObject();
-            fireParticle.translate.position = position;
-            fireParticle.translate.rotation = this.translate.rotation;
-            let opacity = .5;
-            const pMesh = new Mesh({ shape, strokeStyle: `rgba(255, 255, 255, ${opacity})`, fillStyle: 'transparent' });
-            fireParticle.setComponent(pMesh);
-            fireParticle.instantiate()
-            let unsub = TickService.onUpdate(({ deltaTime }: { deltaTime: number }) => {
-                opacity -= deltaTime * .01;
-                shape.scale -= deltaTime * .005;
-                pMesh.strokeStyle = `rgba(120, 120, 120, ${opacity})`
-            })
-            setTimeout(() => {
-                fireParticle.destroy();
-                unsub();
-            }, 2000)
-        }, 150);
     }
     makeDamage(damage: number) {
         if (this._isInvincible) return;
@@ -131,7 +96,6 @@ export default class Player extends Agent {
             projectile.translate.rotation = this.translate.rotation + (Math.random()) * this._accuracy - (Math.random()) * this._accuracy
             projectile.instantiate();
             AudioService.addPosition('player-shoot', this.translate.position);
-            AudioService.addGain('player-shoot', negativeRandom(-.5, 3));
             AudioService.stopAndPlay('player-shoot');
             setTimeout(() => projectile.destroy(), 2000);
             this._lastTimeShot = Date.now();

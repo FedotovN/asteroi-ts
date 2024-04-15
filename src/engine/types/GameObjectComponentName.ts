@@ -1,2 +1,2 @@
-type GameObjectComponentName =  'mesh' | 'collider' | 'rigibody';
+type GameObjectComponentName =  'meshRenderer' | 'collider' | 'rigibody';
 export default GameObjectComponentName;

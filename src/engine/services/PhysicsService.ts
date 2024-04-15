@@ -1,7 +1,7 @@
 import GameObjectsService from "./GameObjectsService";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
-export default class PhysicsService {
+class PhysicsService {
     constructor() {}
     move(deltaTime: number) {
         GameObjectsService.gameObjects.forEach(go => {
@@ -24,3 +24,4 @@ export default class PhysicsService {
         });
     }
 }
+export default new PhysicsService();

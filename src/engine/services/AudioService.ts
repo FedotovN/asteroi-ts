@@ -34,7 +34,6 @@ class AudioService {
                 this._connectMediaSources();
                 this._connectTrackAudioNodes(name);
                 await track.audio.play();
-                console.log(track.audio.playbackRate);
             })
         } catch (e) {
             console.error(e);
@@ -107,10 +106,9 @@ class AudioService {
         this._noSourceTracks.forEach((track) => this._connectTrackToAudioContext(track.name));
     }
     private async _createAudioContext() {
-        if (this._audioContext) return;
+        if (this._audioContext) return this._audioContext.resume();
         this._audioContext = new AudioContext();
         this._onAudioContextInitCallbacks.forEach((cb) => cb());
-        await this._audioContext.resume();
     }
     private _connectTrackToAudioContext(name: string) {
         const track = this.getTrack(name);

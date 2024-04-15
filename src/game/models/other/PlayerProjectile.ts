@@ -1,18 +1,21 @@
 import GameObject, { GameObjectOptions } from "../../../engine/models/GameObject";
 import Vector from "@/engine/models/Vector";
 import degreesToRad from "@/engine/utils/degreesToRad";
-import Shape from "@/engine/models/Shape";
-import Mesh from "@/engine/models/components/Mesh";
+import PolygonShape from "@/engine/models/Shape/PolygonShape";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
 import Asteroid from "@/game/models/entities/Asteroid";
+import ParticleSystem from "@/engine/models/components/ParticleSystem/ParticleSystem";
+import { minRandom } from "@/engine/utils/random";
+import MeshRenderer from "@/engine/models/components/MeshRenderer";
+import PolygonMesh from "@/engine/models/Mesh/PolygonMesh";
 
 export default class PlayerProjectile extends GameObject{
-    private _projectileSpeed = 20;
+    private _projectileSpeed = 40;
     constructor(props?: GameObjectOptions) {
         super(props);
         this.name = 'PlayerProjectile';
-        const shape = new Shape({
+        const shape = new PolygonShape({
             points: [
                 new Vector(-25, 0),
                 new Vector(0, 2),
@@ -21,14 +24,23 @@ export default class PlayerProjectile extends GameObject{
                 new Vector(-25,  0),
             ]
         });
-        const mesh = new Mesh({ shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0 });
+        const mr = new MeshRenderer();
+        mr.mesh = new PolygonMesh({ shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0, glow: 100, glowColor: '#ECEE8166' });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape });
+        const ps = new ParticleSystem();
 
-        this.setComponent(mesh);
+        ps.interval = minRandom(30, 150);
+        ps.amount = minRandom(3, 10);
+
+        this.setComponent(mr);
         this.setComponent(rb);
         this.setComponent(collider);
-
+        this.setComponent(ps);
+        ps.interval = 100;
+        ps.amount = 10;
+        ps.maxParticlesAmount = 100;
+        ps.start();
         collider.onCollision(async (c) => {
             const go = c.getGameObject();
             if (go.name === 'asteroid') {

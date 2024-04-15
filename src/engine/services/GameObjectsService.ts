@@ -1,8 +1,6 @@
 import GameObject from "../models/GameObject";
 class GameObjectsService {
     gameObjects: Set<GameObject> = new Set();
-    height: number;
-    width: number;
 
     instantiate(go: GameObject) {
         this.gameObjects.add(go);

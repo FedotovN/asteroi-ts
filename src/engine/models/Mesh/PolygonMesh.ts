@@ -1,37 +1,42 @@
-import GameObjectComponent, { GameObjectComponentOptions } from "../GameObjectComponent";
-import Shape from "@/engine/models/Shape";
+import PolygonShape from "../Shape/PolygonShape";
+import Translate from "../Translate";
+import Mesh from "@/engine/models/Mesh/Mesh";
 
-type MeshOptions = {
-    shape?: Shape,
+export type PolygonMeshOptions = {
+    shape?: PolygonShape,
     strokeStyle?: string,
     fillStyle?: string,
     lineWidth?: number,
-}
+    glow?: number,
+    glowColor?: string;
+};
 type DrawOptions = {
     context: CanvasRenderingContext2D,
 }
-export default class Mesh extends GameObjectComponent {
-    shape: Shape;
+export default class PolygonMesh implements Mesh{
+    translate: Translate = new Translate();
+    shape: PolygonShape;
     strokeStyle: string;
     fillStyle: string;
     lineWidth: number;
-    constructor(props: GameObjectComponentOptions & MeshOptions) {
-        super(props);
-        this.name = 'mesh';
+    glow: number;
+    glowColor: string;
+    constructor(props: PolygonMeshOptions) {
         if(props.shape) this.shape = props.shape;
-        this._gameObject = props.gameObject;
         this.fillStyle = props.fillStyle;
         this.strokeStyle = props.strokeStyle;
         this.lineWidth = props.lineWidth;
+        this.glow = props.glow;
+        this.glowColor = props.glowColor || 'white';
     }
     draw({ context }: DrawOptions) {
         if (!this.shape) return;
-        const { strokeStyle, fillStyle, lineWidth } = context;
+        const { strokeStyle, fillStyle, lineWidth, shadowBlur, shadowColor } = context;
         context.beginPath()
-        const { translate } = this._gameObject;
-        // const { rotation, parentRotation } = this._gameObject.translate;
+        context.shadowColor = this.glowColor as string;
+        context.shadowBlur = this.glow;
 
-        this.shape.getPointsPosition(translate.getActualPosition(), translate.getActionRotation()).forEach(p => {
+        this.shape.getPointsPosition(this.translate.getActualPosition(), this.translate.getActionRotation()).forEach(p => {
             const { x, y } = p;
             context.lineTo(x, y);
         });
@@ -44,5 +49,7 @@ export default class Mesh extends GameObjectComponent {
         context.strokeStyle = strokeStyle;
         context.fillStyle = fillStyle;
         context.lineWidth = lineWidth;
+        context.shadowBlur = shadowBlur;
+        context.shadowColor = shadowColor;
     }
 }

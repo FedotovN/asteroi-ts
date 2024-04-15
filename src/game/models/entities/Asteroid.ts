@@ -1,12 +1,13 @@
 import Agent, { AgentProperties } from "../Agent";
 import Vector from "@/engine/models/Vector";
-import Shape from "@/engine/models/Shape";
-import Mesh from "@/engine/models/components/Mesh";
+import PolygonShape from "@/engine/models/Shape/PolygonShape";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
 import AudioService from "@/engine/services/AudioService";
 import Player from "@/game/models/entities/Player";
-import { negativeRandom } from "@/engine/utils/random";
+import MeshRenderer from "@/engine/models/components/MeshRenderer";
+import PolygonMesh from "@/engine/models/Mesh/PolygonMesh";
+import Mesh from "@/engine/models/Mesh/Mesh";
 
 export default class Asteroid extends Agent {
     private _isBlinking: boolean;
@@ -34,14 +35,16 @@ export default class Asteroid extends Agent {
 
             vertexArr.push(new Vector(randX, randY));
         }
-        const shape = new Shape({ points: vertexArr });
-        const mesh = new Mesh({ shape, fillStyle: this._asteroidDefaultColor, strokeStyle: '#4BA3C3' });
+        const shape = new PolygonShape({ points: vertexArr });
+        const mr = new MeshRenderer();
+        mr.mesh = new PolygonMesh({ shape, fillStyle: this._asteroidDefaultColor, strokeStyle: '#4BA3C3', glowColor: '#FFFFFF44' });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape })
-
+        mr.mesh.glow = 100;
+        mr.mesh.glowColor = 'rgb(23, 86, 118, .35)';
         rb.rotationFriction = 0;
         rb.friction = 0;
-        this.setComponent(mesh);
+        this.setComponent(mr);
         this.setComponent(rb);
         this.setComponent(collider);
     }
@@ -59,22 +62,25 @@ export default class Asteroid extends Agent {
     _meshBlink() {
         if (this._isBlinking) return;
         this._isBlinking = true;
-        const m = this.getComponent('mesh') as Mesh
-        const { fillStyle } = m;
-        m.fillStyle = 'white'
+        const mr = this.getComponent('meshRenderer') as MeshRenderer;
+        const { fillStyle } = mr.mesh;
+        mr.mesh.fillStyle = 'white'
+        mr.mesh.glow = 1000;
+        mr.mesh.glowColor = '#FFFFFF44'
         setTimeout(() => {
-            m.fillStyle = fillStyle;
+            mr.mesh.fillStyle = fillStyle;
+            mr.mesh.glow = 100;
+            mr.mesh.glowColor = 'rgb(23, 86, 118, .35)';
             this._isBlinking = false;
         }, 100);
     }
     _fillRgba(red: number, green: number, blue: number, alpha: number) {
-        const m = this.getComponent('mesh') as Mesh;
-        m.fillStyle = `rgba(${red},${green},${blue}, ${alpha})`
+        const mr = this.getComponent('meshRenderer') as MeshRenderer;
+        mr.mesh.fillStyle = `rgba(${red},${green},${blue}, ${alpha})`
     }
     makeDamage(damage: number) {
         this.health -= damage;
         AudioService.addPosition('asteroid-hurt', this.translate.position);
-        // AudioService.addGain('asteroid-hurt', negativeRandom(-2, 2));
         AudioService.stopAndPlay('asteroid-hurt');
         const healthPercentage = this.health / this.maxHealth;
         this._fillRgba(23, 86, 118, healthPercentage);
