@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkasteroids_ts=self.webpackChunkasteroids_ts||[]).push([[796],{796:(e,s,a)=>{a.r(s),a.d(s,{default:()=>d});const d=a.p+"2a49efd3e25db017efa779a4e6d239d3.wav"}}]);
