@@ -85,7 +85,6 @@ type CameraOptions = {
     follow() {
         this._context.save()
         const { x, y } = this.target.translate.position;
-        console.log(x, y);
         if (this.translate.position.x - x > this.deadZoneX) {
             this.translate.position.x = lerp(this.translate.position.x, x + this.deadZoneX, this.lerp);
         } else if (this.translate.position.x - x < -this.deadZoneX) {

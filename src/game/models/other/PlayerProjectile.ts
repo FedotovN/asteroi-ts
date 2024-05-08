@@ -5,12 +5,11 @@ import PolygonShape from "@/engine/models/Shape/PolygonShape";
 import Rigidbody from "@/engine/models/components/Rigidbody";
 import Collider from "@/engine/models/components/Collider";
 import Asteroid from "@/game/models/entities/Asteroid";
-import ParticleSystem from "@/engine/models/components/ParticleSystem/ParticleSystem";
-import { minRandom } from "@/engine/utils/random";
+import { minRandom, negativeRandom } from "@/engine/utils/random";
 import MeshRenderer from "@/engine/models/components/MeshRenderer";
 import PolygonMesh from "@/engine/models/Mesh/PolygonMesh";
 
-export default class PlayerProjectile extends GameObject{
+export default class PlayerProjectile extends GameObject {
     private _projectileSpeed = 40;
     constructor(props?: GameObjectOptions) {
         super(props);
@@ -28,19 +27,11 @@ export default class PlayerProjectile extends GameObject{
         mr.mesh = new PolygonMesh({ shape, fillStyle: '#ECEE81', strokeStyle: '#5B9A8B', lineWidth: 0, glow: 100, glowColor: '#ECEE8166' });
         const rb = new Rigidbody({});
         const collider = new Collider({ shape });
-        const ps = new ParticleSystem();
-
-        ps.interval = minRandom(30, 150);
-        ps.amount = minRandom(3, 10);
 
         this.setComponent(mr);
         this.setComponent(rb);
         this.setComponent(collider);
-        this.setComponent(ps);
-        ps.interval = 100;
-        ps.amount = 10;
-        ps.maxParticlesAmount = 100;
-        ps.start();
+
         collider.onCollision(async (c) => {
             const go = c.getGameObject();
             if (go.name === 'asteroid') {
