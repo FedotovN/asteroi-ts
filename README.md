@@ -1,15 +1,17 @@
-# 🚀 Welcome to your new awesome project!
+# Asteroids Game
+## Description
+Little desktop-only game. Created using Typescript, Canvas API and Web Audio API
 
-This project has been created using **webpack-cli**, you can now run
 
-```
-npm run build
-```
+## Demo
+![2024-05-15 21-50-34](https://github.com/FedotovN/asteroids-ts/assets/53238017/47ec5a26-6589-4e5b-99d3-c36dd2c4fdfe)
 
-or
+## Features
 
-```
-yarn build
-```
+- Rendering management: Polygon rendering made easy
+- Audio management: Spatial audio using Web Audio API
+- Physics management: Colliders and objects velocity
 
-to bundle your application
+
+
+Collision detection using [SAT library](https://github.com/jriecken/sat-js)
